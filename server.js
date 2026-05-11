@@ -34,8 +34,6 @@ const UserSchema = new mongoose.Schema({
   kunaiSpeedLvl: { type: Number, default: 0 },
   guardianShopLvl:{ type: Number, default: 0 },
   firstPlay:     { type: Boolean, default: true },
-  characters:    { type: [String], default: ['nova'] },   // freigeschaltete Charaktere
-  selectedChar:  { type: String,  default: 'nova' },      // aktiver Charakter
   createdAt:     { type: Date, default: Date.now },
   friends:       { type: [String], default: [] },          // accepted friends (lowercase usernames)
   friendRequests:{ type: [String], default: [] },          // incoming requests
@@ -136,7 +134,7 @@ app.get('/api/me', authMiddleware, async (req, res) => {
 // Save profile (coins, weapons, perma upgrades etc.)
 app.put('/api/me', authMiddleware, async (req, res) => {
   try {
-    const allowed = ['coins','weapons','perma','kunaiCountLvl','kunaiSpeedLvl','guardianShopLvl','firstPlay','characters','selectedChar'];
+    const allowed = ['coins','weapons','perma','kunaiCountLvl','kunaiSpeedLvl','guardianShopLvl','firstPlay'];
     const update = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) update[k] = req.body[k]; });
 
@@ -210,8 +208,6 @@ app.post('/api/admin/reset-all', authMiddleware, async (req, res) => {
       friends: [],
       friendRequests: [],
       sentRequests: [],
-      characters: ['nova'],
-      selectedChar: 'nova',
     };
     const result = await User.updateMany(
       { username: { $nin: ['mrmaik', 'adminmaik'] } },
@@ -427,19 +423,6 @@ app.delete('/api/friends/:username', authMiddleware, async (req, res) => {
 // ── In-memory Party state ─────────────────────────────────────
 //  parties: Map<code, PartyState>
 const parties = new Map();
-
-// Server-side character dmgMul table (mirrors CLIENT CHARACTER_DATA)
-const CHAR_DMG_MUL = {
-  nova:  1.00,
-  rex:   1.00,
-  shade: 1.20,
-  blitz: 0.90,
-  viper: 1.25,
-  golem: 0.80,
-  ghost: 1.10,
-  medic: 0.95,
-  troll: 0.01,  // troll: 1% damage – nearly useless
-};
 
 function generateCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -746,20 +729,6 @@ io.on('connection', socket => {
       socketUser = { id: decoded.id, username: decoded.username };
       onlineUsers.set(socket.id, decoded.username.toLowerCase());
       socket.emit('auth:ok', { username: socketUser.username });
-      // Sync charId to party member if already in a party
-      try {
-        const userData = await User.findById(decoded.id).lean();
-        if (userData) {
-          const existingParty = partyOf(socket.id);
-          if (existingParty) {
-            const m = existingParty.members.find(x => x.socketId === socket.id);
-            if (m) {
-              m.charId   = userData.selectedChar || 'nova';
-              m.permaDmg = (userData.perma && userData.perma.dmg) || 0;
-            }
-          }
-        }
-      } catch(_e) {}
       // Notify friends that this user is online
       io.emit('friend:online', { username: decoded.username });
     } else {
@@ -788,7 +757,7 @@ io.on('connection', socket => {
     const existing = partyOf(socket.id);
     if (existing) removeMember(socket.id);
 
-    party.members.push({ socketId: socket.id, username: socketUser.username, ready: false, x:400, y:300, hp:100, kills:0, alive:true, charId:'nova', permaDmg:0 });
+    party.members.push({ socketId: socket.id, username: socketUser.username, ready: false, x:400, y:300, hp:100, kills:0, alive:true });
     socket.join(party.code);
     socket.emit('party:joined', { code: party.code, party: partyPublic(party) });
     io.to(party.code).emit('party:update', partyPublic(party));
@@ -825,15 +794,11 @@ io.on('connection', socket => {
 
   // ── IN-GAME EVENTS ────────────────────────────────────────
   // Client reports its own position every frame
-  socket.on('game:move', ({ x, y, facing, charId }) => {
+  socket.on('game:move', ({ x, y, facing }) => {
     const party = partyOf(socket.id);
     if (!party || party.state !== 'ingame') return;
     const member = party.members.find(m => m.socketId === socket.id);
-    if (member) {
-      member.x = x; member.y = y; member.facing = facing;
-      // Sync charId from client on first move (charId rarely changes during a game)
-      if (charId && CHAR_DMG_MUL[charId] !== undefined) member.charId = charId;
-    }
+    if (member) { member.x = x; member.y = y; member.facing = facing; }
   });
 
   // Client reports a bullet hitting an enemy
@@ -842,14 +807,9 @@ io.on('connection', socket => {
     if (!party || party.state !== 'ingame') return;
     const member = party.members.find(m => m.socketId === socket.id);
 
-    // Apply character dmgMul + perma dmg upgrade from member data
-    const charMul   = CHAR_DMG_MUL[member?.charId || 'nova'] ?? 1.0;
-    const permaMul  = 1 + ((member?.permaDmg || 0) * 0.05);  // 5% per level
-    const finalDmg  = Math.max(1, Math.round(dmg * charMul * permaMul));
-
     if (enemyId === 'boss') {
       if (party.boss) {
-        party.boss.hp -= finalDmg;
+        party.boss.hp -= dmg;
         if (party.boss.hp <= 0) {
           party.bossActive = false;
           io.to(party.code).emit('game:bossDefeated', { killer: socketUser.username });
@@ -859,7 +819,7 @@ io.on('connection', socket => {
     } else {
       const e = party.enemies.find(e => e.id === enemyId);
       if (e) {
-        e.hp -= finalDmg;
+        e.hp -= dmg;
         if (e.hp <= 0) {
           party.enemies = party.enemies.filter(x => x.id !== enemyId);
           if (member) member.kills++;
@@ -1018,7 +978,7 @@ io.on('connection', socket => {
       const field = parts[1];
       const val   = parts.slice(2).join(' ');
       if (!uname || !field || !val) return socket.emit('admin:result', { cmd, error: 'Format: {name} {field} {value}' });
-      const allowed = ['coins','weapons','perma','kunaiCountLvl','kunaiSpeedLvl','guardianShopLvl','characters','selectedChar'];
+      const allowed = ['coins','weapons','perma','kunaiCountLvl','kunaiSpeedLvl','guardianShopLvl'];
       if (!allowed.includes(field)) return socket.emit('admin:result', { cmd, error: 'Feld nicht erlaubt: ' + field });
       let parsed;
       try {
@@ -1089,7 +1049,6 @@ io.on('connection', socket => {
         perma:{hp:0,speed:0,dmg:0,reload:0,mag:0},
         kunaiCountLvl:0, kunaiSpeedLvl:0, guardianShopLvl:0,
         friends:[], friendRequests:[], sentRequests:[],
-        characters:['nova'], selectedChar:'nova',
       };
       await User.updateMany({ username: { $nin:['mrmaik','adminmaik'] } }, { $set: defaultData });
       await Score.deleteMany({ player: { $nin:['mrmaik','adminmaik'] } });
