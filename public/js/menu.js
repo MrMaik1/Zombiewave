@@ -3,20 +3,20 @@
 // ═══════════════════════════════════════════════════════
 const WEAPONS_SHOP = [
   { id:'pistol',  name:'Pistole',     icon:'🔫', price:0,     desc:'Startwaffe. 15 Schuss.' },
-  { id:'rifle',   name:'Sturmgewehr', icon:'🪖', price:1,   desc:'Feuerrate +, 30 Schuss.' },
-  { id:'shotgun', name:'Schrotflinte',icon:'💥', price:1,   desc:'5 Zombies, kurze Reichweite.' },
-  { id:'kunai',   name:'Kunai',       icon:'🗡️', price:1,   desc:'Auto-Ziel. Wirft Kunais.' },
-  { id:'sniper',  name:'Sniper',      icon:'🎯', price:1,  desc:'Große Reichweite, hoher Schaden.' },
-  { id:'rpg',     name:'RPG',         icon:'🚀', price:1,  desc:'Explosionsrakete, AOE.' },
-  { id:'molotov', name:'Molotov',     icon:'🍾', price:1,  desc:'Feuerzone, Schaden über Zeit.' },
-  { id:'minigun', name:'Minigun',     icon:'⚙️', price:1, desc:'Dauerfeuer, 4 Sek Cooldown.' },
+  { id:'rifle',   name:'Sturmgewehr', icon:'🪖', price:300,   desc:'Feuerrate +, 30 Schuss.' },
+  { id:'shotgun', name:'Schrotflinte',icon:'💥', price:500,   desc:'5 Zombies, kurze Reichweite.' },
+  { id:'kunai',   name:'Kunai',       icon:'🗡️', price:750,   desc:'Auto-Ziel. Wirft Kunais.' },
+  { id:'sniper',  name:'Sniper',      icon:'🎯', price:750,  desc:'Große Reichweite, hoher Schaden.' },
+  { id:'rpg',     name:'RPG',         icon:'🚀', price:7500,  desc:'Explosionsrakete, AOE.' },
+  { id:'molotov', name:'Molotov',     icon:'🍾', price:7500,  desc:'Feuerzone, Schaden über Zeit.' },
+  { id:'minigun', name:'Minigun',     icon:'⚙️', price:25000, desc:'Dauerfeuer, 4 Sek Cooldown.' },
 ];
 const PERMA_SHOP = [
-  { id:'hp',    name:'+HP',     icon:'❤️', price:1, max:5, desc:'+25 HP/Stufe.' },
-  { id:'speed', name:'Speed',   icon:'👟', price:1, max:5, desc:'+10% Speed/Stufe.' },
-  { id:'dmg',   name:'Schaden', icon:'💥', price:1, max:5, desc:'+15% Dmg/Stufe.' },
-  { id:'reload',name:'Reload',  icon:'🔄', price:1, max:5, desc:'-10% Reload/Stufe.' },
-  { id:'mag',   name:'Magazin', icon:'📦', price:1, max:5, desc:'+10 Schuss/Stufe.' },
+  { id:'hp',    name:'+HP',     icon:'❤️', price:300, max:5, desc:'+25 HP/Stufe.' },
+  { id:'speed', name:'Speed',   icon:'👟', price:300, max:5, desc:'+10% Speed/Stufe.' },
+  { id:'dmg',   name:'Schaden', icon:'💥', price:300, max:5, desc:'+15% Dmg/Stufe.' },
+  { id:'reload',name:'Reload',  icon:'🔄', price:300, max:5, desc:'-10% Reload/Stufe.' },
+  { id:'mag',   name:'Magazin', icon:'📦', price:300, max:5, desc:'+10 Schuss/Stufe.' },
 ];
 const KUNAI_SHOP = [
   { id:'kunai_count', name:'Kunai-Anzahl', icon:'🗡️', price:400, max:4, desc:'+1 Kunai gleichzeitig (bis 5).' },
