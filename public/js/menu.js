@@ -9,7 +9,7 @@ const WEAPONS_SHOP = [
   { id:'sniper',  name:'Sniper',      icon:'🎯', price:1250,  desc:'Große Reichweite, hoher Schaden.' },
   { id:'rpg',     name:'RPG',         icon:'🚀', price:7500,  desc:'Explosionsrakete, AOE.' },
   { id:'molotov', name:'Molotov',     icon:'🍾', price:5500,  desc:'Feuerzone, Schaden über Zeit.' },
-  { id:'minigun', name:'Minigun',     icon:'⚙️', price:25000, desc:'Dauerfeuer, 4 Sek Cooldown.' },
+  { id:'minigun', name:'Minigun',     icon:'⚙️', price:100, desc:'Dauerfeuer, 4 Sek Cooldown.' },
 ];
 const PERMA_SHOP = [
   { id:'hp',    name:'+HP',     icon:'❤️', price:300, max:5, desc:'+25 HP/Stufe.' },
